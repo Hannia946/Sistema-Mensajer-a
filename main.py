@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import bcrypt
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
 import os
+
+from dbm import sqlite3
 
 load_dotenv()  # Carga las variables de entorno desde el archivo .env
 
@@ -12,15 +14,41 @@ app = FastAPI(title="Sistema de Mensajería")
 LLAVE_SECRET_TEXTO = os.getenv("LLAVE_MAESTRA_SECRET")  # Lee la llave secreta desde el archivo .env
 componente_cifrado = Fernet(LLAVE_SECRET_TEXTO.encode('utf-8'))
 
-# simulación de bd
-tabla_usuarios = {}  
-tabla_mensajes = []  
+#config de bd
 
+#archivo de la bd
+db_archivo = "mensajeria.db"
+
+def inicializacionBD():
+    conexion = sqlite3.connect(db_archivo)
+    cursor = conexion.cursor()
+
+    #tabla usuarios
+    cursor.execute("""
+                   CREATE TABLE IF NOT EXISTS usuarios (
+                   usuario TEXT PRIMARY KEY,
+                   password TEXT NOT NULL
+                     )
+                   """)
+    #tabla mensajes
+    cursor.execute("""
+                   CREATE TABLE IF NOT EXISTS mensajes (
+                   id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   remitente TEXT NOT NULL,
+                   destinatario TEXT NOT NULL,
+                   contenido_oculto TEXT NOT NULL
+                     )
+                   """)
+    conexion.commit()
+    conexion.close()
+
+inicializacionBD()
+
+#modelo de datos
 
 class RegistroUsuario(BaseModel):
     usuario: str
     password: str
-
 class EnvíoMensaje(BaseModel):
     remitente: str
     destinatario: str
@@ -35,67 +63,83 @@ def inicio():
 # 2. registrar usuario 
 @app.post("/registrar")
 def registrar_usuario(datos: RegistroUsuario):
-    # verificar si el usuario ya existe
-    if datos.usuario in tabla_usuarios:
-        return {"error": "El usuario ya existe"}
-    
-    # hashear la contraseña con bcrypt 
     sal = bcrypt.gensalt()
     password_hasheada = bcrypt.hashpw(datos.password.encode('utf-8'), sal)
     
-    # guardar la contraseña hasheada en la bd simulada
-    tabla_usuarios[datos.usuario] = password_hasheada.decode('utf-8')
+    conexion = sqlite3.connect(db_archivo)
+    cursor = conexion.cursor()
+
+    try:
+        #insertar usuario
+        cursor.execute("INSERT INTO usuarios (usuario, password) VALUES (?, ?)", (datos.usuario, password_hasheada.decode('utf-8')))
+        conexion.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="El usuario ya existe.")
+    finally:
+        conexion.close()
+    return {"mensaje": f"Usuario {datos.usuario} registrado con éxito en la Base de Datos."}
     
-    return {"mensaje": f"Usuario {datos.usuario} registrado con éxito con contraseña oculta."}
 
 # 3. enviar mensajes 
 @app.post("/enviar-mensaje")
 def enviar_mensaje(datos: EnvíoMensaje):
-    # cifrar el mensaje antes de guardarlo en la base de datos simulada
-    contenido_cifrado = componente_cifrado.encrypt(datos.contenido.encode('utf-8'))
+    # cifrar el mensaje con el componente Fernet (llave maestra)
+    contenido_cifrado = componente_cifrado.encrypt(datos.contenido.encode('utf-8')).decode('utf-8') 
     
-    nuevo_mensaje = {
-        "remitente": datos.remitente,
-        "destinatario": datos.destinatario,
-        "contenido_oculto": contenido_cifrado.decode('utf-8') # se guarda como texto legible para JSON
-    }
+    conexion = sqlite3.connect(db_archivo)
+    cursor = conexion.cursor()
+    #insertar mensaje en la tabla de mensajes
+    cursor.execute("INSERT INTO mensajes (remitente, destinatario, contenido_oculto) VALUES (?, ?, ?)", (datos.remitente, datos.destinatario, contenido_cifrado))
+    conexion.commit()
+    conexion.close()
     
-    tabla_mensajes.append(nuevo_mensaje)
-    return {"mensaje": "Mensaje cifrado y guardado en el servidor con éxito."}
+    return {"mensaje": "Mensaje cifrado y guardado en la Base de Datos con éxito."}
 
-# 4. ver la bd 
-@app.get("/ver-base-de-datos")
-def ver_bd():
-    return {
-        "tabla_usuarios": tabla_usuarios,
-        "tabla_mensajes_cifrados": tabla_mensajes
-    }
-
-# 5. leer mensajes (se descifran antes de mostrar al usuario)
+# 4. leer mensajes)
 @app.get("/leer-mensajes/{usuario_destinatario}")
 def leer_mensajes(usuario_destinatario: str):
+    conexion = sqlite3.connect(db_archivo)
+    cursor = conexion.cursor()
+
+    #buscar los mensajes que le corresponden al destinatario
+    cursor.execute("SELECT remitente, contenido_oculto FROM mensajes WHERE destinatario = ?", (usuario_destinatario,))
+    filas = cursor.fetchall()
+    conexion.close()
     mensajes_del_usuario = []
     
     # buscar en la bd
-    for msg in tabla_mensajes:
-        # si es el mismo usuario
-        if msg["destinatario"] == usuario_destinatario:
-            try:
-                # tomar el contenido oculto y se convierte a bytes
-                contenido_cifrado_bytes = msg["contenido_oculto"].encode('utf-8')
+    for msg in filas:
+        remitenteDB, contenidoCifradoDB = msg
+        try:
+            #se descifra el mensaje con la llave maestra
+            contenidoDescifrado = componente_cifrado.decrypt(contenidoCifradoDB.encode('utf-8')).decode('utf-8')
+            
+            mensajes_del_usuario.append({
+                "remitente": remitenteDB,
+                "contenido": contenidoDescifrado
+            })
+            
+        except Exception:
+            raise HTTPException(status_code=500, detail="Error al descifrar el historial.")
                 
-                # descrifrar con el componente cifrado con la llave del .env
-                contenido_descifrado = componente_cifrado.decrypt(contenido_cifrado_bytes).decode('utf-8')
-                
-                # crear copia con el texto limpio para el usuario
-                mensaje_limpio = {
-                    "remitente": msg["remitente"],
-                    "contenido": contenido_descifrado
-                }
-                mensajes_del_usuario.append(mensaje_limpio)
-            except Exception as e:
-                #avisar el error si no se pudo descifrar el mensaje
-                return {"error": "No se pudieron descifrar los mensajes de forma segura."}
-                
-    # devolver lista vacía si no hay mensajes
     return {"mensajes": mensajes_del_usuario}
+
+# 5. ver la bd 
+@app.get("/ver-base-de-datos")
+def ver_bd():
+    conexion = sqlite3.connect(db_archivo)
+    cursor = conexion.cursor()
+
+    #buscar los mensajes que le corresponden al destinatario
+    cursor.execute("SELECT * FROM usuarios")
+    usuarios = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM mensajes")
+    mensajes = cursor.fetchall()
+    
+    conexion.close()
+    
+    return {
+        "usuarios_en_base_de_datos": [{"usuario": u[0], "hash_password": u[1]} for u in usuarios],
+        "mensajes_cifrados_en_base_de_datos": [{"id": m[0], "remitente": m[1], "destinatario": m[2], "texto_cifrado": m[3]} for m in mensajes]
+    }
