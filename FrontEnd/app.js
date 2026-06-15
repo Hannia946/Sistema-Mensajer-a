@@ -39,22 +39,35 @@ document.getElementById("btn-register").addEventListener("click", async () => {
     }
 });
 
-// Inciar sesión (simulado)
+// Inciar sesión 
 document.getElementById("btn-login").addEventListener("click", () => {
     const usuario = usernameInput.value.trim();
-    if (!usuario) return alert("Escribe tu usuario para ingresar");
-    
-    // guardar quién está usando la app
-    usuarioActual = usuario;
-    welcomeUser.innerText = `Usuario: ${usuarioActual}`;
-    
-    // cambio de pantalla
-    authSection.classList.add("hidden");
-    chatSection.classList.remove("hidden");
-    
-    // cargar mensajes
-    cargarMensajes();
-});
+    const password = passwordInput.value;
+
+    if (!usuario || !password) return alert("Escribe tu usuario y contraseña para ingresar");
+    try{
+        const respuesta = await fetch(`${API_URL}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ usuario: usuario, password: password })
+        });
+
+        const data = await respuesta.json();
+        if (respuesta.ok) {
+            usuarioActual = data.usuario;
+            welcomeUser.innerText = `Usuario: ${usuarioActual}`;
+            
+            authSection.classList.add("hidden");
+            chatSection.classList.remove("hidden");
+
+            cargarMensajes();
+        }else{
+            alert(`Error: ${data.detail || "Credenciales inválidas"}`);
+        }
+    }catch(error){
+        alert("No se pudo conectar con el servidor para iniciar sesión.");
+    }
+});  
 
 // Enviar mensaje
 document.getElementById("btn-send").addEventListener("click", async () => {
