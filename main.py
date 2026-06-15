@@ -91,6 +91,7 @@ def registrar_usuario(datos: RegistroUsuario):
     return {"mensaje": f"Usuario {datos.usuario} registrado con éxito en la Base de Datos."}
     
 #login
+@app.post("/login")
 def login_usuario(datos: LoginUsuario):
     conexion = sqlite3.connect(db_archivo)
     cursor = conexion.cursor()
