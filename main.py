@@ -19,14 +19,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], # cualquier pantalla local se conecte
-    allow_credentials=True,
-    allow_methods=["*"], # permite todos los métodos (GET, POST, etc.)
-    allow_headers=["*"],
-)
-
 LLAVE_SECRET_TEXTO = os.getenv("LLAVE_MAESTRA_SECRET")  # Lee la llave secreta desde el archivo .env
 componente_cifrado = Fernet(LLAVE_SECRET_TEXTO.encode('utf-8'))
 
@@ -69,14 +61,17 @@ class EnvíoMensaje(BaseModel):
     remitente: str
     destinatario: str
     contenido: str
+class LoginUsuario(BaseModel):
+    usuario: str
+    password: str
 
 #ENPOINTS
-#1. saludo de bienvenida
+#saludo de bienvenida
 @app.get("/")
 def inicio():
     return {"mensaje": "¡Bienvenido al servidor de mensajería seguro!"}
 
-# 2. registrar usuario 
+# registrar usuario 
 @app.post("/registrar")
 def registrar_usuario(datos: RegistroUsuario):
     sal = bcrypt.gensalt()
@@ -95,8 +90,27 @@ def registrar_usuario(datos: RegistroUsuario):
         conexion.close()
     return {"mensaje": f"Usuario {datos.usuario} registrado con éxito en la Base de Datos."}
     
+#login
+def login_usuario(datos: LoginUsuario):
+    conexion = sqlite3.connect(db_archivo)
+    cursor = conexion.cursor()
 
-# 3. enviar mensajes 
+    cursor.execute("SELECT password FROM usuarios WHERE usuario = ?", (datos.usuario,))
+    resultado = cursor.fetchone()
+    conexion.close()
+
+    if resultado is None:
+        raise HTTPException(status_code=400, detail="Usuario o contraseña incorrectos.")
+    
+    password_almacenada = resultado[0]
+    
+    coincide = bcrypt.checkpw(datos.password.encode('utf-8'), password_almacenada.encode('utf-8'))
+    if coincide:
+        return {"mensaje": f"Usuario {datos.usuario} autenticado con éxito."}
+    else:
+        raise HTTPException(status_code=400, detail="Usuario o contraseña incorrectos.")
+
+# enviar mensajes 
 @app.post("/enviar-mensaje")
 def enviar_mensaje(datos: EnvíoMensaje):
     # cifrar el mensaje con el componente Fernet (llave maestra)
@@ -111,7 +125,7 @@ def enviar_mensaje(datos: EnvíoMensaje):
     
     return {"mensaje": "Mensaje cifrado y guardado en la Base de Datos con éxito."}
 
-# 4. leer mensajes)
+# leer mensajes)
 @app.get("/leer-mensajes/{usuario_destinatario}")
 def leer_mensajes(usuario_destinatario: str):
     conexion = sqlite3.connect(db_archivo)
@@ -140,7 +154,7 @@ def leer_mensajes(usuario_destinatario: str):
                 
     return {"mensajes": mensajes_del_usuario}
 
-# 5. ver la bd 
+# ver la bd 
 @app.get("/ver-base-de-datos")
 def ver_bd():
     conexion = sqlite3.connect(db_archivo)
