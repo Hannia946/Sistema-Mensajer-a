@@ -4,8 +4,7 @@ import bcrypt
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
 import os
-
-from dbm import sqlite3
+import sqlite3
 
 load_dotenv()  # Carga las variables de entorno desde el archivo .env
 
