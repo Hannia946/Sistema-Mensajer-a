@@ -5,10 +5,27 @@ from cryptography.fernet import Fernet
 from dotenv import load_dotenv
 import os
 import sqlite3
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()  # Carga las variables de entorno desde el archivo .env
 
 app = FastAPI(title="Sistema de Mensajería")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Permite que cualquier pantalla local se conecte
+    allow_credentials=True,
+    allow_methods=["*"], # Permite todos los métodos (GET, POST, etc.)
+    allow_headers=["*"],
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # cualquier pantalla local se conecte
+    allow_credentials=True,
+    allow_methods=["*"], # permite todos los métodos (GET, POST, etc.)
+    allow_headers=["*"],
+)
 
 LLAVE_SECRET_TEXTO = os.getenv("LLAVE_MAESTRA_SECRET")  # Lee la llave secreta desde el archivo .env
 componente_cifrado = Fernet(LLAVE_SECRET_TEXTO.encode('utf-8'))
