@@ -96,6 +96,8 @@ document.getElementById("btn-send").addEventListener("click", async () => {
             msgDiv.innerHTML = `<div class="msg-meta">Para: ${destino}</div>${texto}`;
             chatBox.appendChild(msgDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
+        }else{
+            alert(`El servidor rechazó el mensaje: ${data.detail || JSON.stringify(data)}`);
         }
     } catch (error) {
         alert("Error al enviar el mensaje.");
