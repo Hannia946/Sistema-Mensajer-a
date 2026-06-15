@@ -40,11 +40,12 @@ document.getElementById("btn-register").addEventListener("click", async () => {
 });
 
 // Inciar sesión 
-document.getElementById("btn-login").addEventListener("click", () => {
+document.getElementById("btn-login").addEventListener("click", async () => {
     const usuario = usernameInput.value.trim();
     const password = passwordInput.value;
 
     if (!usuario || !password) return alert("Escribe tu usuario y contraseña para ingresar");
+    
     try{
         const respuesta = await fetch(`${API_URL}/login`, {
             method: "POST",
