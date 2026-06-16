@@ -55,7 +55,7 @@ document.getElementById("btn-login").addEventListener("click", async () => {
 
         const data = await respuesta.json();
         if (respuesta.ok) {
-            usuarioActual = data.usuario;
+            usuarioActual = usuario;
             welcomeUser.innerText = `Usuario: ${usuarioActual}`;
             
             authSection.classList.add("hidden");
