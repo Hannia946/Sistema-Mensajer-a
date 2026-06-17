@@ -56,13 +56,18 @@ document.getElementById("btn-login").addEventListener("click", async () => {
         const data = await respuesta.json();
         if (respuesta.ok) {
             usuarioActual = usuario;
+
             sessionStorage.setItem("usuario_seguro", usuarioActual);
-            welcomeUser.innerText = `Usuario: ${usuarioActual}`;
-            
+
+            welcomeUser.innerText = `Usuario: ${usuarioActual}`;           
             authSection.classList.add("hidden");
             chatSection.classList.remove("hidden");
 
             cargarMensajes();
+            setInterval(() => {
+                cargarMensajes();
+            }, 2000);
+            
         }else{
             alert(`Error: ${data.detail || "Credenciales inválidas"}`);
         }
@@ -120,8 +125,20 @@ async function cargarMensajes() {
             data.mensajes.forEach(msg => {
                 const msgDiv = document.createElement("div");
                 msgDiv.className = "msg other";
-                msgDiv.innerHTML = `<div class="msg-meta">De: ${msg.remitente}</div>${msg.contenido}`;
-                chatBox.appendChild(msgDiv);
+                
+                //elemento seguro para el encabezado
+                const metaDiv = document.createElement("div");
+                metaDiv.className = "msg-meta";
+                metaDiv.textContent = `De: ${msg.remitente}`;//.textContent no ejecuta código
+
+                //elemento seguro para el contenido del mensaje
+                const textSpan = document.createElement("span");
+                textSpan.textContent = msg.contenido;//evita XSS
+               
+                msgDiv.appendChild(metaDiv);
+                msgDiv.appendChild(textSpan);
+
+                chatBox.appendChild(msgDiv);         
             });
         } else {
             chatBox.innerHTML = `<p style="text-align:center; color:#9ca3af; font-size:14px;">No tienes mensajes nuevos.</p>`;
