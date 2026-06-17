@@ -91,7 +91,7 @@ def registrar_usuario(datos: RegistroUsuario):
         raise HTTPException(status_code=400, detail="El usuario ya existe.")
     finally:
         conexion.close()
-    return {"mensaje": f"Usuario {datos.usuario} registrado con éxito en la Base de Datos."}
+    return {"mensaje": f"Usuario {usuario_limpio} registrado con éxito."}
     
 #login
 @app.post("/login")
@@ -112,7 +112,8 @@ def login_usuario(datos: LoginUsuario):
     
     coincide = bcrypt.checkpw(datos.password.encode('utf-8'), password_almacenada.encode('utf-8'))
     if coincide:
-        return {"mensaje": f"Usuario {datos.usuario} autenticado con éxito."}
+        return {"mensaje": f"Usuario {usuario_limpio} autenticado con éxito.",
+                "usuario": usuario_limpio}
     else:
         raise HTTPException(status_code=400, detail="Usuario o contraseña incorrectos.")
 
