@@ -2,7 +2,7 @@
 const API_URL = "http://127.0.0.1:8000";
 
 // variables globales para rastrear al usuario actual
-let usuarioActual = "";
+let usuarioActual = sessionStorage.getItem("usuario_seguro") || "";
 
 // elementos de la pantalla (DOM)
 const authSection = document.getElementById("auth-section");
@@ -56,6 +56,7 @@ document.getElementById("btn-login").addEventListener("click", async () => {
         const data = await respuesta.json();
         if (respuesta.ok) {
             usuarioActual = usuario;
+            sessionStorage.setItem("usuario_seguro", usuarioActual);
             welcomeUser.innerText = `Usuario: ${usuarioActual}`;
             
             authSection.classList.add("hidden");
@@ -137,7 +138,18 @@ document.getElementById("btn-refresh").addEventListener("click", cargarMensajes)
 // Cerrar sesión
 document.getElementById("btn-logout").addEventListener("click", () => {
     usuarioActual = "";
+
+    sessionStorage.removeItem("usuario_seguro");
+
     authSection.classList.remove("hidden");
     chatSection.classList.add("hidden");
     passwordInput.value = "";
 });
+
+// Al cargar la página, verificamos si ya había una sesión activa
+if (usuarioActual) {
+    welcomeUser.innerText = `Usuario: ${usuarioActual}`;
+    authSection.classList.add("hidden");
+    chatSection.classList.remove("hidden");
+    cargarMensajes();
+}
