@@ -64,6 +64,7 @@ function entrarAlChat() {
     welcomeUser.innerText = `Usuario: ${usuarioActual}`;
     authSection.classList.add("hidden");
     chatSection.classList.remove("hidden");
+    document.querySelector(".container").style.maxWidth = "750px";
     cargarListaContactos();
 }
 
@@ -161,7 +162,7 @@ async function cargarMensajes() {
                 chatBox.appendChild(msgDiv);
             });
         } else {
-            chatBox.innerHTML = `<p style="text-align:center; color:#9ca3af; font-size:14px;">No hay mensajes previos. ¡Escribe algo seguro!</p>`;
+            chatBox.innerHTML = `<p style="text-align:center; color:#9ca3af; font-size:14px;">Inicia una conversación</p>`;
         }
         chatBox.scrollTop = chatBox.scrollHeight;
     } catch (error) {
@@ -176,6 +177,7 @@ document.getElementById("btn-logout").addEventListener("click", () => {
     sessionStorage.removeItem("usuario_seguro"); 
     authSection.classList.remove("hidden");
     chatSection.classList.add("hidden");
+    document.querySelector(".container").style.maxWidth = "400px";
     passwordInput.value = "";
     usernameInput.value = "";
     mensajeInput.disabled = true;

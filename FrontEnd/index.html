@@ -6,22 +6,22 @@
     <title>Sistema de Mensajería</title>
     <style>
         :root {
-            --primary: #4f46e5;
+            --primary: #8a2be2;
             --bg: #f3f4f6;
-            --card: #ffffff;
+            --card: rgba(255, 255, 255, 0.70);
             --text: #1f2937;
         }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background: var(--card); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 750px; padding: 24px; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradient(135deg, #8a2be2 0%, #ffa500 50%,#f8f8ff 100%); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: var(--card); border-radius: 12px;  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 400px; padding: 24px; box-sizing: border-box; transition: max-width 0.3s ease;}
         h2 { margin-top: 0; text-align: center; color: var(--primary); }
         .hidden { display: none !important; }
         .form-group { margin-bottom: 16px; }
         label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; }
         input { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
         button { width: 100%; padding: 10px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 15px; margin-bottom: 8px; transition: background 0.2s; }
-        button:hover { background: #4338ca; }
-        button.secondary { background: #10b981; }
-        button.secondary:hover { background: #059669; }
+        button:hover { background: #6a20b0; }
+        button.secondary { background: #ffa500; }
+        button.secondary:hover { background: #db8f01ef; }
         
         /* dos columnas para el chat */
         .chat-layout { display: flex; gap: 16px; height: 400px; margin-top: 16px; }
@@ -71,7 +71,7 @@
                 </div>
                 
                 <div class="chat-main">
-                    <h4 id="chat-con-titulo" style="margin: 0 0 10px 0; color: #4f46e5;">Incia un Chat</h4>
+                    <h4 id="chat-con-titulo" style="margin: 0 0 10px 0; color: var(--primary);">Incia un Chat</h4>
                     
                     <div id="chat-box">
                         <p style="text-align:center; color:#9ca3af; font-size:14px;">Selecciona un contacto para chatear</p>
