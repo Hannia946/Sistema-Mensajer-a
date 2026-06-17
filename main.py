@@ -141,35 +141,61 @@ def enviar_mensaje(datos: EnvíoMensaje):
     return {"mensaje": "Mensaje cifrado y guardado en la Base de Datos con éxito."}
 
 # leer mensajes)
-@app.get("/leer-mensajes/{usuario_destinatario}")
-def leer_mensajes(usuario_destinatario: str):
-    destinatario_limpio = usuario_destinatario.strip()
+@app.get("/leer-mensajes/{usuario_actual}/{usuario_amigo}")
+def leer_mensajes(usuario_actual: str, usuario_amigo: str):
+    usuario_limpio = usuario_actual.strip()
+    amigo_limpio = usuario_amigo.strip()
 
     conexion = sqlite3.connect(db_archivo)
     cursor = conexion.cursor()
 
-    #buscar los mensajes que le corresponden al destinatario
-    cursor.execute("SELECT remitente, contenido_oculto FROM mensajes WHERE destinatario = ?", (destinatario_limpio,))
+    #traer mensajes enviados que yo mande o que me mandaron
+    cursor.execute("""
+        SELECT remitente, destinatario, contenido_oculto 
+        FROM mensajes 
+        WHERE (remitente = ? AND destinatario = ?) 
+           OR (remitente = ? AND destinatario = ?)
+        ORDER BY id ASC
+    """, (usuario_limpio, amigo_limpio, amigo_limpio, usuario_limpio))
+    
     filas = cursor.fetchall()
     conexion.close()
-    mensajes_del_usuario = []
+
+    mensajes_del_chat = []
     
     # buscar en la bd
     for msg in filas:
-        remitenteDB, contenidoCifradoDB = msg
+        remitenteDB, destinatarioDB, contenidoCifradoDB = msg
         try:
             #se descifra el mensaje con la llave maestra
             contenidoDescifrado = componente_cifrado.decrypt(contenidoCifradoDB.encode('utf-8')).decode('utf-8')
             
-            mensajes_del_usuario.append({
+            mensajes_del_chat.append({
                 "remitente": remitenteDB,
+                "destinatario": destinatarioDB,
                 "contenido": contenidoDescifrado
             })
             
         except Exception:
             raise HTTPException(status_code=500, detail="Error al descifrar el historial.")
                 
-    return {"mensajes": mensajes_del_usuario}
+    return {"mensajes": mensajes_del_chat}
+
+#obtener lista de usuarios registrados
+@app.get("/usuarios/{usuario_actual}")
+def obtener_usuarios(usuario_actual: str):
+    usuario_limpio = usuario_actual.strip()
+    conexion = sqlite3.connect(db_archivo)
+    cursor = conexion.cursor()
+    
+    # trae todos los usuarios menos al que está logueado
+    cursor.execute("SELECT usuario FROM usuarios WHERE usuario != ?", (usuario_limpio,))
+    filas = cursor.fetchall()
+    conexion.close()
+    
+    # se convierte la lista de tuplas [('pedro',), ('juan',)] a una lista simple ['pedro', 'juan']
+    lista_usuarios = [u[0] for u in filas]
+    return {"usuarios": lista_usuarios}
 
 # ver la bd 
 @app.get("/ver-base-de-datos")

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mensajería Segura </title>
+    <title>Sistema de Mensajería</title>
     <style>
         :root {
             --primary: #4f46e5;
@@ -12,7 +12,7 @@
             --text: #1f2937;
         }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background: var(--card); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 450px; padding: 24px; box-sizing: border-box; }
+        .container { background: var(--card); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 750px; padding: 24px; box-sizing: border-box; }
         h2 { margin-top: 0; text-align: center; color: var(--primary); }
         .hidden { display: none !important; }
         .form-group { margin-bottom: 16px; }
@@ -23,8 +23,19 @@
         button.secondary { background: #10b981; }
         button.secondary:hover { background: #059669; }
         
-        /* Estilos del Chat */
-        #chat-box { border: 1px solid #e5e7eb; border-radius: 8px; height: 250px; overflow-y: auto; padding: 12px; background: #fafafa; margin-bottom: 16px; }
+        /* dos columnas para el chat */
+        .chat-layout { display: flex; gap: 16px; height: 400px; margin-top: 16px; }
+        
+        /* barra lateral izquierda */
+        .sidebar { width: 30%; border-right: 1px solid #e5e7eb; padding-right: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .user-item { padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; text-align: center; font-weight: 500; transition: all 0.2s; }
+        .user-item:hover { background: #e0e7ff; border-color: var(--primary); }
+        .user-item.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        /* panel derecho */
+        .chat-main { width: 70%; display: flex; flex-direction: column; }
+        #chat-box { border: 1px solid #e5e7eb; border-radius: 8px; flex-grow: 1; overflow-y: auto; padding: 12px; background: #fafafa; margin-bottom: 16px; }
+        
         .msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 8px; max-width: 80%; width: fit-content; }
         .msg.me { background: #e0e7ff; margin-left: auto; color: #3730a3; }
         .msg.other { background: #e5e7eb; margin-right: auto; }
@@ -49,23 +60,29 @@
         </div>
 
         <div id="chat-section" class="hidden">
-            <h2 id="welcome-user">¡Hola!</h2>
-            
-            <div class="form-group">
-                <label for="destinatario">Chatear con:</label>
-                <input type="text" id="destinatario" placeholder="Destinatario">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 id="welcome-user">Usuario: </h3>
+                <button id="btn-logout" style="background: #ef4444; width: auto; margin: 0; padding: 6px 12px; font-size: 13px;">Cerrar Sesión</button>
             </div>
             
-            <button id="btn-refresh" class="secondary">Actualizar/Leer Mensajes</button>
-            
-            <div id="chat-box">
+            <div class="chat-layout">
+                <div class="sidebar" id="lista-usuarios">
+                    <p style="font-size: 12px; color: #6b7280; text-align: center;">Cargando contactos...</p>
                 </div>
-            
-            <div class="form-group" style="display: flex; gap: 8px;">
-                <input type="text" id="mensaje-texto" placeholder="Escribir mensaje...">
-                <button id="btn-send" style="width: auto; margin: 0; padding: 0 20px;">Enviar</button>
+                
+                <div class="chat-main">
+                    <h4 id="chat-con-titulo" style="margin: 0 0 10px 0; color: #4f46e5;">Incia un Chat</h4>
+                    
+                    <div id="chat-box">
+                        <p style="text-align:center; color:#9ca3af; font-size:14px;">Selecciona un contacto para chatear</p>
+                    </div>
+                    
+                    <div class="form-group" style="display: flex; gap: 8px; margin: 0;">
+                        <input type="text" id="mensaje-texto" placeholder="Escribe un mensaje" disabled>
+                        <button id="btn-send" style="width: auto; margin: 0; padding: 0 20px;" disabled>Enviar</button>
+                    </div>
+                </div>
             </div>
-            <button id="btn-logout" style="background: #ef4444; margin-top: 10px;">Cerrar Sesión</button>
         </div>
     </div>
 
