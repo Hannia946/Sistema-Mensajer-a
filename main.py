@@ -74,6 +74,9 @@ def inicio():
 # registrar usuario 
 @app.post("/registrar")
 def registrar_usuario(datos: RegistroUsuario):
+    usuario_limpio = datos.usuario.strip()
+    if not usuario_limpio:
+        raise HTTPException(status_code=400, detail="Indique su usuario.")
     sal = bcrypt.gensalt()
     password_hasheada = bcrypt.hashpw(datos.password.encode('utf-8'), sal)
     
@@ -82,7 +85,7 @@ def registrar_usuario(datos: RegistroUsuario):
 
     try:
         #insertar usuario
-        cursor.execute("INSERT INTO usuarios (usuario, password) VALUES (?, ?)", (datos.usuario, password_hasheada.decode('utf-8')))
+        cursor.execute("INSERT INTO usuarios (usuario, password) VALUES (?, ?)", (usuario_limpio, password_hasheada.decode('utf-8')))
         conexion.commit()
     except sqlite3.IntegrityError:
         raise HTTPException(status_code=400, detail="El usuario ya existe.")
@@ -93,10 +96,12 @@ def registrar_usuario(datos: RegistroUsuario):
 #login
 @app.post("/login")
 def login_usuario(datos: LoginUsuario):
+    usuario_limpio = datos.usuario.strip()
+
     conexion = sqlite3.connect(db_archivo)
     cursor = conexion.cursor()
 
-    cursor.execute("SELECT password FROM usuarios WHERE usuario = ?", (datos.usuario,))
+    cursor.execute("SELECT password FROM usuarios WHERE usuario = ?", (usuario_limpio,))
     resultado = cursor.fetchone()
     conexion.close()
 
@@ -114,13 +119,21 @@ def login_usuario(datos: LoginUsuario):
 # enviar mensajes 
 @app.post("/enviar-mensaje")
 def enviar_mensaje(datos: EnvíoMensaje):
+    
+    remitente_limpio = datos.remitente.strip()
+    destinatario_limpio = datos.destinatario.strip()
+    contenido_limpio = datos.contenido.strip() 
+
+    if not destinatario_limpio or not contenido_limpio:
+        raise HTTPException(status_code=400, detail="El destinatario o el mensaje no pueden estar vacíos.")
+    
     # cifrar el mensaje con el componente Fernet (llave maestra)
-    contenido_cifrado = componente_cifrado.encrypt(datos.contenido.encode('utf-8')).decode('utf-8') 
+    contenido_cifrado = componente_cifrado.encrypt(contenido_limpio.encode('utf-8')).decode('utf-8') 
     
     conexion = sqlite3.connect(db_archivo)
     cursor = conexion.cursor()
     #insertar mensaje en la tabla de mensajes
-    cursor.execute("INSERT INTO mensajes (remitente, destinatario, contenido_oculto) VALUES (?, ?, ?)", (datos.remitente, datos.destinatario, contenido_cifrado))
+    cursor.execute("INSERT INTO mensajes (remitente, destinatario, contenido_oculto) VALUES (?, ?, ?)", (remitente_limpio, destinatario_limpio, contenido_cifrado))
     conexion.commit()
     conexion.close()
     
@@ -129,11 +142,13 @@ def enviar_mensaje(datos: EnvíoMensaje):
 # leer mensajes)
 @app.get("/leer-mensajes/{usuario_destinatario}")
 def leer_mensajes(usuario_destinatario: str):
+    destinatario_limpio = usuario_destinatario.strip()
+
     conexion = sqlite3.connect(db_archivo)
     cursor = conexion.cursor()
 
     #buscar los mensajes que le corresponden al destinatario
-    cursor.execute("SELECT remitente, contenido_oculto FROM mensajes WHERE destinatario = ?", (usuario_destinatario,))
+    cursor.execute("SELECT remitente, contenido_oculto FROM mensajes WHERE destinatario = ?", (destinatario_limpio,))
     filas = cursor.fetchall()
     conexion.close()
     mensajes_del_usuario = []
