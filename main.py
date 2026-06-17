@@ -193,7 +193,7 @@ def obtener_usuarios(usuario_actual: str):
     filas = cursor.fetchall()
     conexion.close()
     
-    # se convierte la lista de tuplas [('pedro',), ('juan',)] a una lista simple ['pedro', 'juan']
+    # se convierte la lista de tuplas [(), ()] a una lista simple [, ]
     lista_usuarios = [u[0] for u in filas]
     return {"usuarios": lista_usuarios}
 
